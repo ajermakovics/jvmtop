@@ -48,6 +48,10 @@ public class VMOverviewView extends AbstractConsoleView
   public VMOverviewView(Integer width) {
     super(width);
   }
+  
+  public List<VMInfo> getVMInfoList() {
+    return vmInfoList;
+  }
 
   public void printView() throws Exception
   {
@@ -135,7 +139,7 @@ public class VMOverviewView extends AbstractConsoleView
    * @param vmList
    * @throws Exception
    */
-  private void updateVMs(List<VMInfo> vmList) throws Exception
+  public void updateVMs(List<VMInfo> vmList) throws Exception
   {
     for (VMInfo vmInfo : vmList)
     {
@@ -148,7 +152,7 @@ public class VMOverviewView extends AbstractConsoleView
    * @param vmMap
    * @param set
    */
-  private void scanForNewVMs()
+  public List<VMInfo> scanForNewVMs()
   {
     Map<Integer, LocalVirtualMachine> machines = LocalVirtualMachine
         .getNewVirtualMachines(vmMap);
@@ -166,6 +170,8 @@ public class VMOverviewView extends AbstractConsoleView
       }
     }
     vmMap = machines;
+    
+    return vmInfoList;
   }
 
   /**
