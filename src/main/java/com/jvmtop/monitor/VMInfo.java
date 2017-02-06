@@ -20,13 +20,13 @@
  */
 package com.jvmtop.monitor;
 
+import com.jvmtop.openjdk.tools.ConnectionState;
+import com.jvmtop.openjdk.tools.LocalVirtualMachine;
+import com.jvmtop.openjdk.tools.ProxyClient;
+import com.sun.tools.attach.AttachNotSupportedException;
+
 import java.io.IOException;
-import java.lang.management.ClassLoadingMXBean;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import java.lang.management.OperatingSystemMXBean;
-import java.lang.management.RuntimeMXBean;
-import java.lang.management.ThreadMXBean;
+import java.lang.management.*;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.ConnectException;
 import java.util.Collection;
@@ -36,11 +36,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.jvmtop.openjdk.tools.ConnectionState;
-import com.jvmtop.openjdk.tools.LocalVirtualMachine;
-import com.jvmtop.openjdk.tools.ProxyClient;
-import com.sun.tools.attach.AttachNotSupportedException;
 
 /**
  * VMInfo retrieves or updates the metrics for a specific remote jvm,
@@ -442,6 +437,11 @@ public class VMInfo
   public long getHeapMax()
   {
     return heapMemoryUsage.getMax();
+  }
+
+  public long getHeapSize()
+  {
+    return heapMemoryUsage.getCommitted();
   }
 
   public long getNonHeapUsed()
