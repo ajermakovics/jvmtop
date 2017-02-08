@@ -53,6 +53,14 @@ public class VMOverviewView extends AbstractConsoleView
     return vmInfoList;
   }
 
+  public VMInfo getVMInfo(int id) {
+    for(VMInfo vm: vmInfoList) {
+      if(id == vm.getId())
+        return vm;
+    }
+    return null;
+  }
+
   public void printView() throws Exception
   {
     printHeader();

@@ -21,16 +21,12 @@
 
 package com.jvmtop.view;
 
-import java.lang.management.ThreadInfo;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 import com.jvmtop.monitor.VMInfo;
 import com.jvmtop.monitor.VMInfoState;
 import com.jvmtop.openjdk.tools.LocalVirtualMachine;
+
+import java.lang.management.ThreadInfo;
+import java.util.*;
 
 /**
  * "detail" view, printing detail metrics of a specific jvm.
@@ -61,6 +57,16 @@ public class VMDetailView extends AbstractConsoleView
     LocalVirtualMachine localVirtualMachine = LocalVirtualMachine
         .getLocalVirtualMachine(vmid);
     vmInfo_ = VMInfo.processNewVM(localVirtualMachine, vmid);
+  }
+
+  public VMDetailView(VMInfo vmInfo)
+  {
+    super(0);
+    vmInfo_ = vmInfo;
+  }
+
+  public int getVmId() {
+    return vmInfo_.getId();
   }
 
   public boolean isSortByTotalCPU()
@@ -154,6 +160,69 @@ public class VMDetailView extends AbstractConsoleView
 
     printTopThreads();
 
+  }
+
+  public static class ThreadStats {
+    public long TID;
+    public String name, blockedBy;
+    public Thread.State state;
+    public double cpu, totalCpu;
+  }
+
+  public List<ThreadStats> getTopThreads() throws Exception {
+
+    List<ThreadStats> stats = new ArrayList<ThreadStats>();
+
+    if (vmInfo_.getThreadMXBean().isThreadCpuTimeSupported())
+    {
+      Map<Long, Long> newThreadCPUMillis = new HashMap<Long, Long>();
+
+      Map<Long, Long> cpuTimeMap = new TreeMap<Long, Long>();
+
+      for (Long tid : vmInfo_.getThreadMXBean().getAllThreadIds())
+      {
+        long threadCpuTime = vmInfo_.getThreadMXBean().getThreadCpuTime(tid);
+        long deltaThreadCpuTime = 0;
+        if (previousThreadCPUMillis.containsKey(tid))
+        {
+          deltaThreadCpuTime = threadCpuTime - previousThreadCPUMillis.get(tid);
+
+          cpuTimeMap.put(tid, deltaThreadCpuTime);
+        }
+        newThreadCPUMillis.put(tid, threadCpuTime);
+      }
+
+      cpuTimeMap = sortByValue(cpuTimeMap, true);
+
+      for (Long tid : cpuTimeMap.keySet())
+      {
+        ThreadInfo info = vmInfo_.getThreadMXBean().getThreadInfo(tid);
+
+        if (info != null)
+        {
+          ThreadStats threadStats = new ThreadStats();
+          threadStats.TID = tid;
+          threadStats.name = info.getThreadName();
+          threadStats.state = info.getThreadState();
+          threadStats.cpu = getThreadCPUUtilization(cpuTimeMap.get(tid), vmInfo_.getDeltaUptime());
+          threadStats.totalCpu = getThreadCPUUtilization(vmInfo_.getThreadMXBean()
+                  .getThreadCpuTime(tid), vmInfo_.getProxyClient()
+                  .getProcessCpuTime(), 1);
+          threadStats.blockedBy = getBlockedThread(info);
+          stats.add(threadStats);
+        }
+
+        if (stats.size() > numberOfDisplayedThreads_
+                && displayedThreadLimit_)
+        {
+          break;
+        }
+      }
+
+      previousThreadCPUMillis = newThreadCPUMillis;
+    }
+
+    return stats;
   }
 
   /**
